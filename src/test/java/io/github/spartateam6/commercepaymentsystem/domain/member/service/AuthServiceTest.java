@@ -25,7 +25,6 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
 
@@ -168,7 +167,6 @@ class AuthServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasMessage(ErrorCode.INVALID_CREDENTIALS.getMessage());
 
-
         // 비밀번호 불일치시 JWT 발급 되지 않아야 한다..
         verify(jwtProvider, never()).createToken(any());
     }
@@ -196,6 +194,5 @@ class AuthServiceTest {
         verify(jwtProvider, never()).createToken(any());
 
     }
-
 
 }

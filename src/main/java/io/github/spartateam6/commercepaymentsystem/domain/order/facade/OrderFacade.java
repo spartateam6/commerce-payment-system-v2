@@ -1,4 +1,5 @@
 package io.github.spartateam6.commercepaymentsystem.domain.order.facade;
+
 import io.github.spartateam6.commercepaymentsystem.domain.cart.dto.response.CartItemForOrderResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.cart.dto.response.CartResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.cart.service.CartService;
@@ -25,6 +26,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -70,13 +72,11 @@ public class OrderFacade {
                 order.getId(), order.getOrderNumber(), memberId, order.getStatus());
     }
 
-
     @Transactional(readOnly = true)
     public OrderPreviewResponse preview(Long memberId, OrderPreviewRequest request) {
-
         List<CartItemForOrderResponse> cartItems = getOwnedCartItems(memberId, request.cartItemIds());
 
-        // 장바구니 상품에서 상품 ID만 추출한
+        // 장바구니 상품에서 상품 ID만 추출
         Set<Long> productIds = cartItems.stream()
                 .map(CartItemForOrderResponse::productId)
                 .collect(Collectors.toSet());
@@ -84,7 +84,7 @@ public class OrderFacade {
         // 미리보기이므로 재고를 차감하지 않는다.
         Map<Long, ProductForOrderResponse> products = productService.getProductsForOrder(productIds);
 
-         // 현재 상품명·가격·재고를 기준으로 주문 예정 상품과 총액을 계산
+        // 현재 상품명·가격·재고를 기준으로 주문 예정 상품과 총액을 계산
         PreparedOrder preparedOrder = prepareOrder(cartItems, products);
 
         List<OrderPreviewResponse.PreviewItem> previewItems =
@@ -105,11 +105,9 @@ public class OrderFacade {
         return new OrderPreviewResponse(previewItems, preparedOrder.totalAmount());
     }
 
-
     @Transactional
     public OrderCreateResponse createOrder(Long memberId, OrderCreateRequest request) {
-
-        // 회원 조회 및 잠금
+        // 회원 조회
         Member member = memberService.getMember(memberId);
 
         // 주문할 장바구니 항목 조회
@@ -179,7 +177,6 @@ public class OrderFacade {
         return OrderDetailResponse.from(order, paymentResponse);
     }
 
-
     private List<CartItemForOrderResponse> getOwnedCartItems(
             Long memberId,
             List<Long> requestedIds
@@ -229,7 +226,6 @@ public class OrderFacade {
         return selectedCartItems;
     }
 
-
     private PreparedOrder prepareOrder(
             List<CartItemForOrderResponse> cartItems,
             Map<Long, ProductForOrderResponse> productMap
@@ -271,7 +267,6 @@ public class OrderFacade {
 
         return new PreparedOrder(List.copyOf(items), totalAmount);
     }
-
 
     private String generateOrderNumber() {
         String dateTime = LocalDateTime.now().format(ORDER_NUMBER_DATE_FORMAT);

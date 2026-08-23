@@ -17,4 +17,3 @@ public record OrderPreviewRequest(
                 : Collections.unmodifiableList(new ArrayList<>(cartItemIds));
     }
 }
-

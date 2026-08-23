@@ -22,7 +22,6 @@ public enum ErrorCode {
     INSUFFICIENT_POINT(HttpStatus.CONFLICT, "POINT_001", "포인트가 부족합니다."),
     INVALID_POINT_AMOUNT(HttpStatus.BAD_REQUEST, "POINT_002", "포인트 사용 금액이 올바르지 않습니다."),
 
-
     // Product
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "PRODUCT_001", "상품을 찾을 수 없습니다."),
     INSUFFICIENT_STOCK(HttpStatus.CONFLICT, "PRODUCT_002", "재고가 부족합니다."),
@@ -47,8 +46,6 @@ public enum ErrorCode {
     ALREADY_ORDER_CANCELED(HttpStatus.CONFLICT, "ORDER_010", "이미 취소된 주문입니다."),
     INVALID_POINT_USAGE(HttpStatus.BAD_REQUEST, "ORDER_011", "사용할 포인트 금액이 올바르지 않습니다."),
     ORDER_REFUND_REQUIRED(HttpStatus.CONFLICT, "ORDER_012", "결제 완료 주문은 환불 요청이 필요합니다."),
-
-
 
     // Payment
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_001", "결제 정보를 찾을 수 없습니다."),

@@ -4,7 +4,6 @@ import io.github.spartateam6.commercepaymentsystem.domain.cart.service.CartServi
 import io.github.spartateam6.commercepaymentsystem.domain.order.entity.Order;
 import io.github.spartateam6.commercepaymentsystem.domain.order.entity.OrderStatus;
 import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderItemService;
-import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderService;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentDto;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentRequestDto;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.entity.Payment;
@@ -28,8 +27,15 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.BDDMockito.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.BDDMockito.willDoNothing;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class PaymentServiceTest {
@@ -39,9 +45,6 @@ class PaymentServiceTest {
 
     @Mock
     private PaymentRepository paymentRepository;
-
-    @Mock
-    private OrderService orderService;
 
     @Mock
     private OrderItemService orderItemService;
@@ -91,20 +94,18 @@ class PaymentServiceTest {
         }
 
         @Test
-        @DisplayName("다른 회원의 주문이면 ORDER_NOT_FOUND 예외가 발생한다")
+        @DisplayName("다른 회원의 주문이면 FORBIDDEN_ACCESS 예외가 발생한다")
         void validPayment_소유권불일치_예외발생() {
             // given
             Payment payment = PaymentFixture.createPayment();
             PaymentRequestDto dto = new PaymentRequestDto(ORDER_NUMBER, 30000);
 
             given(paymentRepository.findByOrderNumberWithOrder(ORDER_NUMBER)).willReturn(Optional.of(payment));
-            given(orderService.getOrderByOrderNumber(ORDER_NUMBER, 2L))
-                    .willThrow(new BusinessException(ErrorCode.ORDER_NOT_FOUND));
 
             // when & then
             BusinessException ex = assertThrows(BusinessException.class,
                     () -> paymentService.validPayment(2L, dto));
-            assertEquals(ErrorCode.ORDER_NOT_FOUND, ex.getErrorCode());
+            assertEquals(ErrorCode.FORBIDDEN_ACCESS, ex.getErrorCode());
         }
 
         @Test
@@ -112,11 +113,9 @@ class PaymentServiceTest {
         void validPayment_금액불일치_예외발생() {
             // given
             Payment payment = PaymentFixture.createPayment(); // amount = 30000
-            Order order = createOrder(OrderStatus.PAYMENT_PENDING, 30000);
             PaymentRequestDto dto = new PaymentRequestDto(ORDER_NUMBER, 99999);
 
             given(paymentRepository.findByOrderNumberWithOrder(ORDER_NUMBER)).willReturn(Optional.of(payment));
-            given(orderService.getOrderByOrderNumber(ORDER_NUMBER, memberId)).willReturn(order);
 
             // when & then
             BusinessException ex = assertThrows(BusinessException.class,
@@ -132,10 +131,10 @@ class PaymentServiceTest {
             // 실제로 ALREADY_PROCESSED_PAYMENT를 유발하는 FAILED 상태를 사용한다.
             Payment payment = PaymentFixture.createPaymentWithStatus(PaymentStatus.FAILED);
             Order order = createOrder(OrderStatus.CANCELLED, 30000);
+            ReflectionTestUtils.setField(payment, "order", order);
             PaymentRequestDto dto = new PaymentRequestDto(ORDER_NUMBER, 30000);
 
             given(paymentRepository.findByOrderNumberWithOrder(ORDER_NUMBER)).willReturn(Optional.of(payment));
-            given(orderService.getOrderByOrderNumber(ORDER_NUMBER, memberId)).willReturn(order);
 
             // when & then
             BusinessException ex = assertThrows(BusinessException.class,
@@ -148,11 +147,9 @@ class PaymentServiceTest {
         void validPayment_성공() {
             // given
             Payment payment = PaymentFixture.createPayment(); // PENDING, amount=30000
-            Order order = createOrder(OrderStatus.PAYMENT_PENDING, 30000);
             PaymentRequestDto dto = new PaymentRequestDto(ORDER_NUMBER, 30000);
 
             given(paymentRepository.findByOrderNumberWithOrder(ORDER_NUMBER)).willReturn(Optional.of(payment));
-            given(orderService.getOrderByOrderNumber(ORDER_NUMBER, memberId)).willReturn(order);
 
             // when
             PaymentDto result = paymentService.validPayment(memberId, dto);
@@ -197,7 +194,7 @@ class PaymentServiceTest {
             assertEquals(PaymentStatus.FAILED, payment.getStatus());
             assertEquals(OrderStatus.CANCELLED, order.getStatus());
             then(orderItemService).should().restoreOrderProductStock(order.getId());
-            then(paymentRepository).should().save(payment);
+            then(paymentRepository).should(never()).save(any(Payment.class));
         }
     }
 
@@ -237,7 +234,7 @@ class PaymentServiceTest {
             assertEquals(OrderStatus.CONFIRMED, order.getStatus());
             then(cartService).should().deletePurchasedItems(memberId, purchasedCartItemIds);
             then(cartService).should(never()).clearCart(memberId);
-            then(paymentRepository).should().save(payment);
+            then(paymentRepository).should(never()).save(any(Payment.class));
         }
     }
 

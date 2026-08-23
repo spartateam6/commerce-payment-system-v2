@@ -25,4 +25,3 @@ public record OrderCreateRequest(
         pointToUse = pointToUse == null ? 0 : pointToUse;
     }
 }
-

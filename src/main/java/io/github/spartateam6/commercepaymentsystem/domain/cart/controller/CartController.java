@@ -77,7 +77,7 @@ public class CartController {
     @GetMapping
     public ResponseEntity<ApiResponse<CartResponse>> getCart(
             @MemberId Long memberId
-    ){
+    ) {
         CartResponse response =
                 cartService.getCart(memberId);
         return ResponseEntity.ok(

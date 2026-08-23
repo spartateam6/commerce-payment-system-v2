@@ -36,7 +36,7 @@ public class PaymentFacade {
             return PaymentConfirmResponseDto.success(paymentDto);
         }
 
-        // 포인트로 전액 결제하면 PG를 안거치도록한다.
+        // 포인트로 전액 결제하면 PG를 거치지 않는다.
         if (paymentDto.pgAmount() == 0) {
             paymentService.successPayment(memberId, paymentRequestDto.orderNumber(), 0L);
             log.info("포인트 전액 결제 완료 paymentId={} orderNumber={} memberId={} pgAmount=0",
@@ -66,7 +66,7 @@ public class PaymentFacade {
                 paymentGateway.cancelPayment(paymentDto.portonePaymentId(), "결제 금액 불일치");
             } catch (RuntimeException exception) {
                 log.warn("결제 금액 불일치 보상 취소 실패 paymentId={} orderNumber={} expectedPgAmount={} actualPgAmount={}",
-                        paymentDto.id(), paymentRequestDto.orderNumber(), paymentDto.pgAmount(), pgPayment.totalAmount(),exception);
+                        paymentDto.id(), paymentRequestDto.orderNumber(), paymentDto.pgAmount(), pgPayment.totalAmount(), exception);
                 throw exception;
             }
             paymentService.failPayment(paymentRequestDto.orderNumber());

@@ -13,6 +13,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("""
     SELECT p FROM Payment p
     JOIN FETCH p.order o
+    JOIN FETCH o.member
     WHERE o.orderNumber = :orderNumber
     """)
     Optional<Payment> findByOrderNumberWithOrder(

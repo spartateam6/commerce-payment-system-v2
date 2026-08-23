@@ -1,6 +1,6 @@
 package io.github.spartateam6.commercepaymentsystem.domain.product.dto.response;
-import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
 
+import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
 
 public record ProductForOrderResponse(
         Product product,

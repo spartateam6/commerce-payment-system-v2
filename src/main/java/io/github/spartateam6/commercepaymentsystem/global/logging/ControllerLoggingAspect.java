@@ -11,7 +11,6 @@ import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-
 @Slf4j
 @Aspect
 @Component
@@ -28,14 +27,14 @@ public class ControllerLoggingAspect {
         String className = signature.getDeclaringType().getSimpleName();
         String methodName = signature.getName();
 
-        //Controller 요청 처리가 된 시점
+        // Controller 요청 처리가 시작된 시점
         log.info("[요청 시작] httpMethod={} uri={} controller={}.{}()",
                 httpMethod, requestUri, className, methodName);
 
         try {
             Object result = joinPoint.proceed();
 
-            //정상 응답까지 걸린 시간
+            // 정상 응답까지 걸린 시간
             log.info("[요청 완료] httpMethod={} uri={} controller={}.{}() durationMs={}",
                     httpMethod, requestUri, className, methodName, elapsedMillis(startNanos));
             return result;
@@ -43,7 +42,7 @@ public class ControllerLoggingAspect {
             // 실패한 요청의 예외 유형과 처리시간을 남긴다.
             log.warn("[요청 실패] httpMethod={} uri={} controller={}.{}() durationMs={} exceptionType={}",
                     httpMethod, requestUri, className, methodName, elapsedMillis(startNanos), throwable.getClass().getSimpleName());
-            //응답 생성은 글로발익쌕쎤핸들러에게,,
+            // 예외 응답 생성은 GlobalExceptionHandler에 위임
             throw throwable;
         }
 

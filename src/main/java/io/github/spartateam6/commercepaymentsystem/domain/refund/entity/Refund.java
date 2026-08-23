@@ -94,5 +94,4 @@ public class Refund extends AuditingEntity {
         this.status = RefundStatus.FAILED;
     }
 
-
 }

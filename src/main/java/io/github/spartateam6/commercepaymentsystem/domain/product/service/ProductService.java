@@ -1,7 +1,6 @@
 package io.github.spartateam6.commercepaymentsystem.domain.product.service;
 
 import io.github.spartateam6.commercepaymentsystem.domain.product.dto.request.ProductSearchCondition;
-import io.github.spartateam6.commercepaymentsystem.global.response.PageResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.product.dto.response.ProductForOrderResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.product.dto.response.ProductResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
@@ -10,6 +9,7 @@ import io.github.spartateam6.commercepaymentsystem.domain.product.repository.Pro
 import io.github.spartateam6.commercepaymentsystem.domain.product.repository.ProductSpecification;
 import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
 import io.github.spartateam6.commercepaymentsystem.global.exception.BusinessException;
+import io.github.spartateam6.commercepaymentsystem.global.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -20,7 +20,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -44,7 +49,7 @@ public class ProductService {
                 .and(ProductSpecification.soldOutEquals(condition.soldOut())));
 
         Pageable pageable = PageRequest.of(
-                condition.page() -1,
+                condition.page() - 1,
                 condition.size(),
                 resolveSort(condition.sort())
         );
@@ -80,7 +85,7 @@ public class ProductService {
         try {
             return SaleStatus.valueOf(saleStatus);
         } catch (IllegalArgumentException e) {
-            throw  new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 판매 상태입니다: " + saleStatus);
+            throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 판매 상태입니다: " + saleStatus);
         }
     }
 
@@ -94,9 +99,8 @@ public class ProductService {
         if (sort.equals("priceDesc")) {
             return Sort.by(Sort.Direction.DESC, "price");
         }
-        throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 정렬 조건입니다: " +sort);
+        throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 정렬 조건입니다: " + sort);
     }
-
 
     @Transactional(propagation = Propagation.MANDATORY)
     public Map<Long, ProductForOrderResponse> validateAndDecreaseStocks(
@@ -125,7 +129,6 @@ public class ProductService {
         List<Long> sortedProductIds = productIds.stream().sorted().toList();
 
         // 모든 상품의 수량과 재고를 먼저 검증, 아직 재고는 차감하지 않는다.
-
         for (Long productId : sortedProductIds) {
             Integer quantity = orderQuantities.get(productId);
             Product product = productMap.get(productId);

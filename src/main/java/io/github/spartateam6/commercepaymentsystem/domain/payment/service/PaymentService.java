@@ -4,7 +4,6 @@ import io.github.spartateam6.commercepaymentsystem.domain.cart.service.CartServi
 import io.github.spartateam6.commercepaymentsystem.domain.order.entity.Order;
 import io.github.spartateam6.commercepaymentsystem.domain.order.entity.OrderStatus;
 import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderItemService;
-import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderService;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentDto;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentForOrderResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentRequestDto;
@@ -28,7 +27,6 @@ import java.util.Optional;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final OrderService orderService;
     private final OrderItemService orderItemService;
     private final CartService cartService;
     private final PointService pointService;
@@ -37,7 +35,10 @@ public class PaymentService {
         Payment payment = paymentRepository.findByOrderNumberWithOrder(paymentRequestDto.orderNumber())
                 .orElseThrow(() -> new BusinessException(ErrorCode.PAYMENT_NOT_FOUND));
 
-        Order order = orderService.getOrderByOrderNumber(paymentRequestDto.orderNumber(), memberId);
+        Order order = payment.getOrder();
+        if (!order.getMember().getId().equals(memberId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN_ACCESS);
+        }
 
         // 이미 완료된 결제 — Facade에서 idempotent 200 응답 처리
         if (payment.getStatus() == PaymentStatus.PAID && order.getStatus() == OrderStatus.CONFIRMED) {
@@ -75,7 +76,6 @@ public class PaymentService {
         order.updateStatus(OrderStatus.CANCELLED);
         // 차감한 재고 복구
         orderItemService.restoreOrderProductStock(order.getId());
-        paymentRepository.save(payment);
     }
 
     @Transactional
@@ -105,7 +105,6 @@ public class PaymentService {
 
         List<Long> purchasedCartItemIds = orderItemService.getCartItemIds(order.getId());
         cartService.deletePurchasedItems(memberId, purchasedCartItemIds);
-        paymentRepository.save(payment);
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -131,7 +130,6 @@ public class PaymentService {
 
         return paymentRepository.save(payment);
     }
-
 
     @Transactional(readOnly = true, propagation = Propagation.MANDATORY)
     public Optional<PaymentForOrderResponse> findByOrderId(Long orderId) {

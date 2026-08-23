@@ -74,7 +74,6 @@ public class PointService {
         member.changePoint(earned - used);
         log.info("결제 포인트 정산 완료 paymentId={} memberId={} used={} earned={} balanceAfter={}",
                 payment.getId(), memberId, used, earned, member.getPointBalance());
-
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -97,7 +96,6 @@ public class PointService {
                 payment.getId(), memberId, restoreAmount, revokeAmount, member.getPointBalance());
     }
 
-
     private void saveTransaction(Member member, Payment payment,
                                  PointTransactionType transactionType, int amount) {
         if (amount == 0) {
@@ -106,10 +104,8 @@ public class PointService {
         pointTransactionRepository.save(new PointTransaction(member, payment, transactionType, amount));
     }
 
-
     private Member getMemberForUpdate(Long memberId) {
         return memberService.getMemberForUpdate(memberId);
-
     }
 
     private boolean hasPaymentTransactions(Long memberId, Long paymentId) {

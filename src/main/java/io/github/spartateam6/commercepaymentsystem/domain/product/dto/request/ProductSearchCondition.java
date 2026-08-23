@@ -12,4 +12,5 @@ public record ProductSearchCondition(
         String sort,
         int page,
         int size
-){}
+) {
+}

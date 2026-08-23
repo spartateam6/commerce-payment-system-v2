@@ -4,7 +4,6 @@ import io.github.spartateam6.commercepaymentsystem.domain.payment.entity.Payment
 import io.github.spartateam6.commercepaymentsystem.domain.payment.entity.PaymentStatus;
 import lombok.Builder;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Builder
@@ -19,17 +18,17 @@ public record PaymentDto(
         LocalDateTime completedAt
 ) {
 
-  public static PaymentDto from(Payment payment) {
-    return PaymentDto.builder()
-            .createdAt(payment.getCreatedAt())
-            .updatedAt(payment.getUpdatedAt())
-            .id(payment.getId())
-            .orderAmount(payment.getOrderAmount())
-            .pgAmount(payment.getPgAmount())
-            .status(payment.getStatus())
-            .portonePaymentId(payment.getPortonePaymentId())
-            .completedAt(payment.getCompletedAt())
-            .build();
-  }
+    public static PaymentDto from(Payment payment) {
+        return PaymentDto.builder()
+                .createdAt(payment.getCreatedAt())
+                .updatedAt(payment.getUpdatedAt())
+                .id(payment.getId())
+                .orderAmount(payment.getOrderAmount())
+                .pgAmount(payment.getPgAmount())
+                .status(payment.getStatus())
+                .portonePaymentId(payment.getPortonePaymentId())
+                .completedAt(payment.getCompletedAt())
+                .build();
+    }
 
 }

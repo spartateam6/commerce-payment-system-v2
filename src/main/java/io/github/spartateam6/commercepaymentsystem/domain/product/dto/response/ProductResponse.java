@@ -5,7 +5,7 @@ import io.github.spartateam6.commercepaymentsystem.domain.product.entity.SaleSta
 
 import java.time.LocalDateTime;
 
-public record ProductResponse (
+public record ProductResponse(
         Long id,
         String name,
         Integer price,
@@ -16,8 +16,8 @@ public record ProductResponse (
         boolean soldOut,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
-){
-    public static ProductResponse from(Product product){
+) {
+    public static ProductResponse from(Product product) {
         return new ProductResponse(
                 product.getId(),
                 product.getName(),
@@ -25,7 +25,7 @@ public record ProductResponse (
                 product.getStock(),
                 product.getDescription(),
                 product.getCategory(),
-               product.getSaleStatus(),
+                product.getSaleStatus(),
                 product.getStock() == 0,
                 product.getCreatedAt(),
                 product.getUpdatedAt()

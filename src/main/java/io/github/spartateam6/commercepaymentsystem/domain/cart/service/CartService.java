@@ -117,12 +117,9 @@ public class CartService {
         return cartItem;
     }
 
-
     @Transactional(readOnly = true)
     public CartResponse getCart(Long memberId) {
-
-       memberService.getMember(memberId);
-
+        memberService.getMember(memberId);
 
         Optional<Cart> optionalCart =
                 cartRepository.findByMember_Id(memberId);

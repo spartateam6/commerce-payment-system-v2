@@ -23,7 +23,5 @@ public enum OrderStatus {
         }
     };
 
-
-
     public abstract boolean canTransitTo(OrderStatus target);
 }

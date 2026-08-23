@@ -1,4 +1,5 @@
 package io.github.spartateam6.commercepaymentsystem.domain.order.entity;
+
 import io.github.spartateam6.commercepaymentsystem.domain.member.entity.Member;
 import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
 import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
@@ -24,11 +25,14 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import static io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode.*;
 
+import static io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode.INVALID_POINT_USAGE;
+import static io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode.ORDER_MEMBER_ID_REQUIRED;
+import static io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode.ORDER_NUMBER_REQUIRED;
 
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter

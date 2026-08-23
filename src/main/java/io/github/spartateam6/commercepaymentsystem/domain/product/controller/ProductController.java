@@ -1,11 +1,10 @@
 package io.github.spartateam6.commercepaymentsystem.domain.product.controller;
 
 import io.github.spartateam6.commercepaymentsystem.domain.product.dto.request.ProductSearchCondition;
-import io.github.spartateam6.commercepaymentsystem.global.response.PageResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.product.dto.response.ProductResponse;
-import io.github.spartateam6.commercepaymentsystem.domain.product.entity.SaleStatus;
 import io.github.spartateam6.commercepaymentsystem.domain.product.service.ProductService;
 import io.github.spartateam6.commercepaymentsystem.global.response.ApiResponse;
+import io.github.spartateam6.commercepaymentsystem.global.response.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +36,7 @@ public class ProductController {
     @GetMapping("/api/products/{productId}")
     public ResponseEntity<ApiResponse<ProductResponse>> getProduct(
             @PathVariable Long productId
-    ){
+    ) {
         return ResponseEntity.ok(ApiResponse.ok(productService.getProduct(productId)));
     }
 }

@@ -289,7 +289,7 @@ PortOne 결제 완료 후 서버에서 실제 결제 상태와 결제 금액을 
 
 ## 🎬 주요 기능 Demo 영상
 
-https://github.com/user-attachments/assets/472256f8-4c02-427d-84c1-b0ce63f5e60d
+https://github.com/user-attachments/assets/6e0e5089-b263-46ab-b101-d76c21cb9ea7
 
 
 # 🧑‍💻 Contributors

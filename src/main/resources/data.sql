@@ -4,6 +4,7 @@
 -- ---------------------------------------------------------
 
 DELETE FROM point_transactions;
+DELETE FROM refund;
 DELETE FROM order_items;
 DELETE FROM payment;
 DELETE FROM orders;

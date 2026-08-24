@@ -55,7 +55,7 @@ docker compose up -d
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
-또는 IDE(IntelliJ)에서 `local` 프로파일을 지정해 `CommercePaymentSystemApplication`을 실행합니다. (`.run/CommercePaymentSystemApplication.run.xml`에 이미 구성되어 있습니다.)
+또는 IDE(IntelliJ)에서 `local` 프로파일을 지정해 `CommercePaymentSystemApplication`을 실행합니다.
 
 `local` 프로파일 기준 주요 설정(`src/main/resources/application-local.yaml`):
 
@@ -289,7 +289,7 @@ PortOne 결제 완료 후 서버에서 실제 결제 상태와 결제 금액을 
 
 ## 🎬 주요 기능 Demo 영상
 
-https://github.com/user-attachments/assets/472256f8-4c02-427d-84c1-b0ce63f5e60d
+https://github.com/user-attachments/assets/6e0e5089-b263-46ab-b101-d76c21cb9ea7
 
 
 # 🧑‍💻 Contributors

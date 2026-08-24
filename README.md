@@ -183,15 +183,6 @@ io.github.spartateam6.commercepaymentsystem
 | `USE_RESTORE` | 사용 포인트 반환 |
 | `EARN_REVOKE` | 적립 포인트 회수 |
 
-- Webhook Event
-
-| Status | Description |
-|---|---|
-| `RECEIVED` | 웹훅 수신 |
-| `PROCESSED` | 정상 처리 완료 |
-| `FAILED` | 처리 실패 |
-| `IGNORED` | 중복 이벤트 또는 처리 불필요 |
-
 - Product
 
 | Status | Description |

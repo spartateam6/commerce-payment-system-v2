@@ -193,7 +193,8 @@ io.github.spartateam6.commercepaymentsystem
 ---
 ## 📌 ERD
 
-<img width="1100" height="670" alt="image" src="/Users/kimbomin/Desktop/커머스 결제 시스템 ERD 필수.png" />
+<img width="917" height="805" alt="커머스 결제 시스템 ERD 필수" src="https://github.com/user-attachments/assets/8204ffce-5dc1-4b36-80b9-6c3529225c96" />
+
 
 ## 📌 Flowchart
 

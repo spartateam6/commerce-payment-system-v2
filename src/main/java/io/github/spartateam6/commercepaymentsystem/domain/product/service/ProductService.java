@@ -91,13 +91,16 @@ public class ProductService {
 
     private Sort resolveSort(String sort) {
         if (sort == null || sort.equals("latest")) {
-            return Sort.by(Sort.Direction.DESC, "createdAt");
+            return Sort.by(Sort.Direction.DESC, "createdAt")
+                    .and(Sort.by(Sort.Direction.ASC, "id"));
         }
         if (sort.equals("priceAsc")) {
-            return Sort.by(Sort.Direction.ASC, "price");
+            return Sort.by(Sort.Direction.ASC, "price")
+                    .and(Sort.by(Sort.Direction.ASC, "id"));
         }
         if (sort.equals("priceDesc")) {
-            return Sort.by(Sort.Direction.DESC, "price");
+            return Sort.by(Sort.Direction.DESC, "price")
+                    .and(Sort.by(Sort.Direction.ASC, "id"));
         }
         throw new BusinessException(ErrorCode.INVALID_INPUT, "지원하지 않는 정렬 조건입니다: " + sort);
     }

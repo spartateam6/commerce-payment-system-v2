@@ -55,7 +55,7 @@ docker compose up -d
 ./gradlew bootRun --args='--spring.profiles.active=local'
 ```
 
-또는 IDE(IntelliJ)에서 `local` 프로파일을 지정해 `CommercePaymentSystemApplication`을 실행합니다. (`.run/CommercePaymentSystemApplication.run.xml`에 이미 구성되어 있습니다.)
+또는 IDE(IntelliJ)에서 `local` 프로파일을 지정해 `CommercePaymentSystemApplication`을 실행합니다.
 
 `local` 프로파일 기준 주요 설정(`src/main/resources/application-local.yaml`):
 

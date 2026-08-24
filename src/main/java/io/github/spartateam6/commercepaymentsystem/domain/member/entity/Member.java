@@ -1,6 +1,8 @@
 package io.github.spartateam6.commercepaymentsystem.domain.member.entity;
 
+import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
 import io.github.spartateam6.commercepaymentsystem.global.entity.AuditingEntity;
+import io.github.spartateam6.commercepaymentsystem.global.exception.BusinessException;
 import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.Column;
@@ -16,13 +18,11 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-@Setter
 @Entity
 @Table(name = "member", uniqueConstraints = {@UniqueConstraint(name = "member_pk_2",
         columnNames = {"email"})})
@@ -57,5 +57,21 @@ public class Member extends AuditingEntity {
     @Column(name = "phone_number", nullable = false, length = 30)
     private String phoneNumber;
 
+    @Column(name = "point_balance", nullable = false)
+    @Builder.Default
+    private Integer pointBalance = 0;
 
+    public void changePoint(int changeAmount) {
+        this.pointBalance += changeAmount;
+    }
+
+    public void validatePointBalance(Integer amount) {
+        if (amount == null || amount < 0) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_USAGE);
+        }
+
+        if (pointBalance < amount) {
+            throw new BusinessException(ErrorCode.INSUFFICIENT_POINT);
+        }
+    }
 }

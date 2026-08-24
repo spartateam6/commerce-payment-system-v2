@@ -2,60 +2,111 @@ package io.github.spartateam6.commercepaymentsystem.domain.order.entity;
 
 import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
 import io.github.spartateam6.commercepaymentsystem.global.entity.AuditingEntity;
-import jakarta.persistence.AttributeOverride;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-@Setter
 @Entity
-@Table(name = "order_item")
-@AttributeOverride(name = "createdAt", column = @Column(nullable = false))
+@Table(
+        name = "order_items",
+        indexes = {
+                @Index(name = "idx_order_items_order_id", columnList = "order_id"),
+                @Index(name = "idx_order_items_product_id", columnList = "product_id")
+        }
+)
 public class OrderItem extends AuditingEntity {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "order_item_id", nullable = false)
+    @Column(name = "order_item_id")
     private Long id;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "order_id", nullable = false)
+    @JoinColumn(
+            name = "order_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_order_items_order")
+    )
     private Order order;
 
-    @NotNull
+    @Column(name = "product_id", insertable = false, updatable = false)
+    private Long productId;
+
+    /**
+     * 주문 생성 당시 선택한 장바구니 항목 ID 스냅샷.
+     * 장바구니 항목은 결제 완료 후 삭제되므로 FK 연관관계로 매핑하지 않는다.
+     */
+    @Column(name = "cart_item_id")
+    private Long cartItemId;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "product_id", nullable = false)
+    @JoinColumn(
+            name = "product_id",
+            nullable = false,
+            foreignKey = @ForeignKey(name = "fk_order_items_product")
+    )
     private Product product;
 
-    @Size(max = 100)
-    @NotNull
-    @Column(name = "product_name", nullable = false, length = 100)
-    private String productName;
+    @Column(name = "product_name_snapshot", nullable = false, length = 200)
+    private String productNameSnapshot;
 
-    @NotNull
-    @Column(name = "price", nullable = false)
-    private Integer price;
+    @Column(name = "unit_price_snapshot", nullable = false)
+    private Integer unitPriceSnapshot;
 
-    @NotNull
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    static OrderItem create(
+            Order order,
+            Long cartItemId,
+            Product product,
+            String productName,
+            Integer unitPrice,
+            Integer quantity
+    ) {
+        if (order == null) {
+            throw new IllegalArgumentException("주문은 필수입니다.");
+        }
+        if (cartItemId == null || cartItemId <= 0) {
+            throw new IllegalArgumentException("장바구니 상품 ID는 필수입니다.");
+        }
+        if (product == null) {
+            throw new IllegalArgumentException("상품은 필수입니다.");
+        }
+        if (productName == null || productName.isBlank()) {
+            throw new IllegalArgumentException("상품명은 필수입니다.");
+        }
+        if (unitPrice == null || unitPrice < 0) {
+            throw new IllegalArgumentException("상품 가격은 0 이상이어야 합니다.");
+        }
+        if (quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("주문 수량은 1개 이상이어야 합니다.");
+        }
 
+        OrderItem orderItem = new OrderItem();
+        orderItem.order = order;
+        orderItem.cartItemId = cartItemId;
+        orderItem.product = product;
+        orderItem.productNameSnapshot = productName;
+        orderItem.unitPriceSnapshot = unitPrice;
+        orderItem.quantity = quantity;
+        return orderItem;
+    }
+
+    public Integer calculateLineAmount() {
+        return unitPriceSnapshot * quantity;
+    }
 }

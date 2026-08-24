@@ -1,0 +1,303 @@
+package io.github.spartateam6.commercepaymentsystem.domain.order.facade;
+
+import io.github.spartateam6.commercepaymentsystem.domain.cart.dto.response.CartItemForOrderResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.cart.dto.response.CartResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.cart.service.CartService;
+import io.github.spartateam6.commercepaymentsystem.domain.member.entity.Member;
+import io.github.spartateam6.commercepaymentsystem.domain.member.service.MemberService;
+import io.github.spartateam6.commercepaymentsystem.domain.order.dto.OrderCreateRequest;
+import io.github.spartateam6.commercepaymentsystem.domain.order.dto.OrderCreateResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.order.dto.OrderDetailResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.order.dto.OrderPreviewRequest;
+import io.github.spartateam6.commercepaymentsystem.domain.order.dto.OrderPreviewResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.order.entity.Order;
+import io.github.spartateam6.commercepaymentsystem.domain.order.entity.OrderStatus;
+import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderItemService;
+import io.github.spartateam6.commercepaymentsystem.domain.order.service.OrderService;
+import io.github.spartateam6.commercepaymentsystem.domain.payment.dto.PaymentForOrderResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.payment.entity.Payment;
+import io.github.spartateam6.commercepaymentsystem.domain.payment.service.PaymentService;
+import io.github.spartateam6.commercepaymentsystem.domain.product.dto.response.ProductForOrderResponse;
+import io.github.spartateam6.commercepaymentsystem.domain.product.entity.Product;
+import io.github.spartateam6.commercepaymentsystem.domain.product.service.ProductService;
+import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
+import io.github.spartateam6.commercepaymentsystem.global.exception.BusinessException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class OrderFacade {
+
+    private static final DateTimeFormatter ORDER_NUMBER_DATE_FORMAT =
+            DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+    private final OrderService orderService;
+    private final OrderItemService orderItemService;
+    private final MemberService memberService;
+    private final CartService cartService;
+    private final ProductService productService;
+    private final PaymentService paymentService;
+
+    @Transactional
+    public void cancelOrder(Long memberId, Long orderId) {
+        Order order = orderService.getOrder(memberId, orderId);
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new BusinessException(ErrorCode.ALREADY_ORDER_CANCELED);
+        }
+
+        if (order.getStatus() != OrderStatus.PAYMENT_PENDING) {
+            throw new BusinessException(ErrorCode.ORDER_REFUND_REQUIRED);
+        }
+
+        order.updateStatus(OrderStatus.CANCELLED);
+        paymentService.cancelPendingByOrder(order.getOrderNumber());
+        orderItemService.restoreOrderProductStock(orderId);
+        log.info("주문취소와 재고 복구 완료 orderId={} orderNumber={} memberId={} orderStatus={} stockRestoreCompleted=true",
+                order.getId(), order.getOrderNumber(), memberId, order.getStatus());
+    }
+
+    @Transactional(readOnly = true)
+    public OrderPreviewResponse preview(Long memberId, OrderPreviewRequest request) {
+        List<CartItemForOrderResponse> cartItems = getOwnedCartItems(memberId, request.cartItemIds());
+
+        // 장바구니 상품에서 상품 ID만 추출
+        Set<Long> productIds = cartItems.stream()
+                .map(CartItemForOrderResponse::productId)
+                .collect(Collectors.toSet());
+
+        // 미리보기이므로 재고를 차감하지 않는다.
+        Map<Long, ProductForOrderResponse> products = productService.getProductsForOrder(productIds);
+
+        // 현재 상품명·가격·재고를 기준으로 주문 예정 상품과 총액을 계산
+        PreparedOrder preparedOrder = prepareOrder(cartItems, products);
+
+        List<OrderPreviewResponse.PreviewItem> previewItems =
+                preparedOrder.items()
+                        .stream()
+                        .map(item ->
+                                new OrderPreviewResponse.PreviewItem(
+                                        item.cartItemId(),
+                                        item.product().getId(),
+                                        item.productName(),
+                                        item.unitPrice(),
+                                        item.quantity(),
+                                        item.lineAmount()
+                                )
+                        )
+                        .toList();
+
+        return new OrderPreviewResponse(previewItems, preparedOrder.totalAmount());
+    }
+
+    @Transactional
+    public OrderCreateResponse createOrder(Long memberId, OrderCreateRequest request) {
+        // 회원 조회
+        Member member = memberService.getMember(memberId);
+
+        // 주문할 장바구니 항목 조회
+        List<CartItemForOrderResponse> cartItems = getOwnedCartItems(memberId, request.cartItemIds());
+
+        // 상품별 주문 수량 계산
+        Map<Long, Integer> quantities = cartItems.stream()
+                .collect(Collectors.toMap(
+                        CartItemForOrderResponse::productId,
+                        CartItemForOrderResponse::quantity,
+                        (first, second) -> {
+                            throw new BusinessException(
+                                    ErrorCode.DUPLICATE_ORDER_ITEM_SELECTION
+                            );
+                        },
+                        LinkedHashMap::new
+                ));
+
+        // 상품 잠금 및 재고 선차감
+        Map<Long, ProductForOrderResponse> reservedProducts = productService.validateAndDecreaseStocks(quantities);
+
+        // 주문 예정 정보 계산
+        PreparedOrder preparedOrder = prepareOrder(cartItems, reservedProducts);
+
+        // 포인트 사용 여부만 검증
+        validatePointUsage(request.pointToUse(), preparedOrder.totalAmount());
+        member.validatePointBalance(request.pointToUse());
+
+        List<OrderService.CreateOrderItem> createItems = preparedOrder.items()
+                .stream()
+                .map(item -> new OrderService.CreateOrderItem(
+                        item.cartItemId(),
+                        item.product(),
+                        item.productName(),
+                        item.unitPrice(),
+                        item.quantity()
+                ))
+                .toList();
+
+        // 주문과 주문상품 생성
+        Order savedOrder = orderService.createOrder(member, generateOrderNumber(), request.pointToUse(), createItems);
+
+        Payment payment = paymentService.createPendingPayment(savedOrder);
+
+        return OrderCreateResponse.from(savedOrder, payment);
+    }
+
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderDetail(Long memberId, Long orderId) {
+        Order order = orderService.getOrder(memberId, orderId);
+
+        PaymentForOrderResponse payment =
+                paymentService.findByOrderId(orderId)
+                        .orElseThrow(() -> new BusinessException(
+                                ErrorCode.ORDER_PAYMENT_INFORMATION_UNAVAILABLE
+                        ));
+
+        OrderDetailResponse.PaymentResponse paymentResponse =
+                new OrderDetailResponse.PaymentResponse(
+                        payment.paymentId(),
+                        payment.amount(),
+                        payment.status(),
+                        payment.completedAt(),
+                        payment.createdAt()
+                );
+
+        return OrderDetailResponse.from(order, paymentResponse);
+    }
+
+    private List<CartItemForOrderResponse> getOwnedCartItems(
+            Long memberId,
+            List<Long> requestedIds
+    ) {
+        Set<Long> requestedCartItemIds = new LinkedHashSet<>(requestedIds);
+
+        if (requestedCartItemIds.size() != requestedIds.size()) {
+            throw new BusinessException(ErrorCode.DUPLICATE_ORDER_ITEM_SELECTION);
+        }
+
+        CartResponse cart = cartService.getCart(memberId);
+
+        // CartResponse 안의 items를 꺼내서 주문에서 필요한 CartItemForOrder 목록으로 변환
+        List<CartItemForOrderResponse> selectedCartItems =
+                cart.items()
+                        .stream()
+                        .filter(item ->
+                                requestedCartItemIds.isEmpty()
+                                        || requestedCartItemIds.contains(
+                                        item.cartItemId()
+                                )
+                        )
+                        .map(item -> new CartItemForOrderResponse(
+                                item.cartItemId(),
+                                item.productId(),
+                                item.quantity()
+                        ))
+                        .toList();
+
+        if (selectedCartItems.isEmpty()) {
+            if (requestedCartItemIds.isEmpty()) {
+                throw new BusinessException(ErrorCode.ORDER_ITEMS_EMPTY);
+            }
+            throw new BusinessException(ErrorCode.INVALID_ORDER_ITEM_SELECTION);
+        }
+
+        if (!requestedCartItemIds.isEmpty()) {
+            Set<Long> foundIds = selectedCartItems.stream()
+                    .map(CartItemForOrderResponse::cartItemId)
+                    .collect(Collectors.toSet());
+
+            if (!foundIds.equals(requestedCartItemIds)) {
+                throw new BusinessException(ErrorCode.INVALID_ORDER_ITEM_SELECTION);
+            }
+        }
+
+        return selectedCartItems;
+    }
+
+    private PreparedOrder prepareOrder(
+            List<CartItemForOrderResponse> cartItems,
+            Map<Long, ProductForOrderResponse> productMap
+    ) {
+        Set<Long> requestedProductIds = cartItems.stream()
+                .map(CartItemForOrderResponse::productId)
+                .collect(Collectors.toSet());
+
+        if (!productMap.keySet().equals(requestedProductIds)) {
+            throw new BusinessException(ErrorCode.INVALID_ORDER_ITEM_SELECTION);
+        }
+
+        List<PreparedItem> items = new ArrayList<>();
+        int totalAmount = 0;
+
+        for (CartItemForOrderResponse cartItem : cartItems) {
+            ProductForOrderResponse product = productMap.get(cartItem.productId());
+
+            if (product.stock() < cartItem.quantity()) {
+                throw new BusinessException(
+                        ErrorCode.ORDER_STOCK_INSUFFICIENT,
+                        product.productName() + "의 재고가 부족합니다."
+                );
+            }
+
+            int lineAmount = product.unitPrice() * cartItem.quantity();
+
+            items.add(new PreparedItem(
+                    cartItem.cartItemId(),
+                    product.product(),
+                    product.productName(),
+                    product.unitPrice(),
+                    cartItem.quantity(),
+                    lineAmount
+            ));
+
+            totalAmount += lineAmount;
+        }
+
+        return new PreparedOrder(List.copyOf(items), totalAmount);
+    }
+
+    private String generateOrderNumber() {
+        String dateTime = LocalDateTime.now().format(ORDER_NUMBER_DATE_FORMAT);
+        String randomValue = UUID.randomUUID()
+                .toString()
+                .replace("-", "")
+                .substring(0, 12)
+                .toUpperCase();
+
+        return "ORD-" + dateTime + "-" + randomValue;
+    }
+
+    private void validatePointUsage(Integer pointToUse, Integer totalAmount) {
+        if (pointToUse == null || pointToUse < 0 || pointToUse > totalAmount) {
+            throw new BusinessException(ErrorCode.INVALID_POINT_USAGE);
+        }
+    }
+
+    private record PreparedItem(
+            Long cartItemId,
+            Product product,
+            String productName,
+            Integer unitPrice,
+            Integer quantity,
+            Integer lineAmount
+    ) {
+    }
+
+    private record PreparedOrder(
+            List<PreparedItem> items,
+            Integer totalAmount
+    ) {
+    }
+}

@@ -3,7 +3,6 @@ package io.github.spartateam6.commercepaymentsystem.global.response;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
 import lombok.Getter;
-import org.springframework.http.HttpStatus;
 
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -37,7 +36,4 @@ public class ApiResponse<T> {
         return new ApiResponse<>(errorCode.getCode(), message, null);
     }
 
-    public static ApiResponse<Void> error(String code, String message) {
-        return new ApiResponse<>(code, message, null);
-    }
 }

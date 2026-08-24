@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>포인트 내역 : SPARTA SHOP</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary:    #FF6B35;
+      --primary-dk: #e55a24;
+      --accent:     #1a1a2e;
+      --text:       #111;
+      --text-sub:   #888;
+      --border:     #ebebeb;
+      --bg:         #f5f5f7;
+      --card:       #fff;
+      --radius:     14px;
+      --shadow-sm:  0 2px 8px rgba(0,0,0,.06);
+      --shadow-md:  0 6px 20px rgba(0,0,0,.09);
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", sans-serif; background: var(--bg); color: var(--text); font-size: 14px; min-height: 100vh; }
+
+    /* ── 헤더 ── */
+    header { background: var(--accent); height: 60px; display: flex; align-items: center; padding: 0 32px; gap: 20px; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,.25); }
+    .logo { font-size: 20px; font-weight: 900; color: #fff; text-decoration: none; letter-spacing: -0.5px; }
+    .logo span { color: var(--primary); }
+    .header-nav { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+    .nav-link { color: rgba(255,255,255,.7); text-decoration: none; font-size: 13px; font-weight: 600; transition: color .15s; }
+    .nav-link:hover { color: #fff; }
+    .nav-sep { color: rgba(255,255,255,.25); font-size: 12px; }
+    .nav-btn { padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; text-decoration: none; transition: all .18s; border: none; font-family: inherit; }
+    .nav-btn-ghost { background: rgba(255,255,255,.1); color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.18); }
+    .nav-btn-ghost:hover { background: rgba(255,255,255,.2); color: #fff; }
+    .nav-btn-primary { background: var(--primary); color: #fff; }
+
+    /* ── 레이아웃 ── */
+    .page { max-width: 720px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 24px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 24px; }
+
+    /* ── 잔액 카드 ── */
+    .balance-card {
+      background: linear-gradient(135deg, var(--accent) 0%, #2d2d4e 100%);
+      border-radius: var(--radius);
+      padding: 28px 28px 24px;
+      color: #fff;
+      margin-bottom: 28px;
+      box-shadow: var(--shadow-md);
+    }
+    .balance-label { font-size: 13px; color: rgba(255,255,255,.6); font-weight: 600; margin-bottom: 8px; }
+    .balance-amount { font-size: 38px; font-weight: 900; letter-spacing: -1px; }
+    .balance-amount span { font-size: 20px; font-weight: 700; margin-left: 4px; opacity: .8; }
+    .balance-skeleton { background: rgba(255,255,255,.15); border-radius: 8px; animation: shimmer-dark 1.4s infinite; }
+    @keyframes shimmer-dark {
+      0%, 100% { opacity: .5; }
+      50% { opacity: 1; }
+    }
+
+    /* ── 내역 리스트 ── */
+    .tx-list { display: flex; flex-direction: column; gap: 1px; background: var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .tx-item {
+      background: var(--card);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: background .15s;
+    }
+    .tx-item:hover { background: #fafafa; }
+
+    .tx-icon {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .tx-icon-earn        { background: #e8faf3; }
+    .tx-icon-use         { background: #fff3f0; }
+    .tx-icon-use-restore { background: #e8f4ff; }
+    .tx-icon-earn-revoke { background: #fff8e6; }
+
+    .tx-info { flex: 1; min-width: 0; }
+    .tx-type { font-size: 14px; font-weight: 700; }
+    .tx-date { font-size: 12px; color: var(--text-sub); margin-top: 3px; }
+    .tx-payment-id { font-size: 11px; color: var(--text-sub); margin-top: 2px; font-family: monospace; }
+
+    .tx-amount { font-size: 17px; font-weight: 900; flex-shrink: 0; letter-spacing: -0.5px; }
+    .tx-amount-earn        { color: #1a7a4a; }
+    .tx-amount-earn::before { content: '+'; }
+    .tx-amount-use         { color: #c0392b; }
+    .tx-amount-use::before { content: '-'; }
+    .tx-amount-use-restore { color: #1565c0; }
+    .tx-amount-use-restore::before { content: '+'; }
+    .tx-amount-earn-revoke { color: #b07a00; }
+    .tx-amount-earn-revoke::before { content: '-'; }
+
+    /* ── 페이지네이션 ── */
+    .pagination { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 24px; }
+    .page-btn {
+      width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); font-size: 13px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all .15s; font-family: inherit;
+    }
+    .page-btn:hover:not(:disabled) { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-btn:disabled { opacity: .35; cursor: default; }
+    .page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .page-info { font-size: 13px; color: var(--text-sub); }
+
+    /* ── 빈 상태 ── */
+    .empty { text-align: center; padding: 60px 20px; background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow-sm); }
+    .empty-icon { font-size: 48px; margin-bottom: 16px; display: block; }
+    .empty-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .empty-desc { font-size: 13px; color: var(--text-sub); }
+
+    /* ── 스켈레톤 ── */
+    .skeleton { background: linear-gradient(90deg, #f0f0f0 25%, #e4e4e4 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 8px; }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ── 토스트 ── */
+    #toast { position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(60px); background: var(--accent); color: #fff; padding: 12px 24px; border-radius: 30px; font-size: 13px; font-weight: 600; opacity: 0; transition: transform .3s cubic-bezier(.34,1.56,.64,1), opacity .3s; z-index: 9999; white-space: nowrap; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.18); }
+    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    #toast.error { background: #c0392b; }
+
+    @media (max-width: 600px) {
+      header { padding: 0 16px; }
+      .page { padding: 20px 14px 60px; }
+      .balance-card { padding: 20px; }
+      .balance-amount { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a class="logo" href="/demo/products.html"><span>S</span>PARTA SHOP</a>
+  <div class="header-nav">
+    <a href="/demo/products.html" class="nav-link">상품 목록</a>
+    <span class="nav-sep">|</span>
+    <a href="/demo/cart.html" class="nav-link">장바구니</a>
+    <span class="nav-sep">|</span>
+    <a href="/demo/order-list.html" class="nav-link">주문 내역</a>
+    <span class="nav-sep">|</span>
+    <a href="/demo/point-history.html" class="nav-link">포인트</a>
+    <a href="/demo/login.html" id="loginLink" class="nav-btn nav-btn-primary" style="display:none">로그인</a>
+    <button id="logoutBtn" class="nav-btn nav-btn-ghost" style="display:none" onclick="Auth.logout()">로그아웃</button>
+  </div>
+</header>
+
+<div class="page">
+  <div class="page-title">포인트 내역</div>
+
+  <!-- 잔액 카드 -->
+  <div class="balance-card">
+    <div class="balance-label">현재 포인트 잔액</div>
+    <div class="balance-amount" id="balanceAmount">
+      <div class="balance-skeleton" style="height:42px;width:160px;border-radius:8px"></div>
+    </div>
+  </div>
+
+  <!-- 내역 -->
+  <div id="txArea"></div>
+  <div id="paginationArea"></div>
+</div>
+
+<div id="toast"></div>
+
+<script src="/demo/js/api.js"></script>
+<script src="/demo/js/auth.js"></script>
+<script>
+  if (!Auth.requireAuth()) {}
+
+  document.getElementById('loginLink').style.display = Auth.isLoggedIn() ? 'none'  : 'flex';
+  document.getElementById('logoutBtn').style.display = Auth.isLoggedIn() ? 'block' : 'none';
+
+  let currentPage = 0;
+  const PAGE_SIZE = 20;
+
+  const TYPE_META = {
+    EARN:        { icon: '🪙', cls: 'earn',        amtCls: 'tx-amount-earn',        iconCls: 'tx-icon-earn'        },
+    USE:         { icon: '💸', cls: 'use',          amtCls: 'tx-amount-use',         iconCls: 'tx-icon-use'         },
+    USE_RESTORE: { icon: '↩️', cls: 'use-restore',  amtCls: 'tx-amount-use-restore', iconCls: 'tx-icon-use-restore' },
+    EARN_REVOKE: { icon: '⚠️', cls: 'earn-revoke',  amtCls: 'tx-amount-earn-revoke', iconCls: 'tx-icon-earn-revoke' },
+  };
+
+  function fmtDate(iso) {
+    if (!iso) return '-';
+    return iso.slice(0, 16).replace('T', ' ');
+  }
+
+  function esc(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  /* ── 잔액 로드 ── */
+  async function loadBalance() {
+    try {
+      const data = await api.get('/api/points');
+      document.getElementById('balanceAmount').innerHTML =
+        `${data.balance.toLocaleString()}<span>P</span>`;
+    } catch (e) {
+      document.getElementById('balanceAmount').innerHTML =
+        `<span style="font-size:14px;opacity:.7">불러오기 실패</span>`;
+    }
+  }
+
+  /* ── 거래 내역 로드 ── */
+  async function loadTransactions(page = 0) {
+    const area = document.getElementById('txArea');
+    const pagination = document.getElementById('paginationArea');
+
+    area.innerHTML = [1,2,3,4,5].map(() => `
+      <div style="background:#fff;padding:16px 20px;display:flex;gap:16px;align-items:center;border-bottom:1px solid var(--border)">
+        <div class="skeleton" style="width:40px;height:40px;border-radius:50%;flex-shrink:0"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+          <div class="skeleton" style="height:14px;width:80px"></div>
+          <div class="skeleton" style="height:12px;width:120px"></div>
+        </div>
+        <div class="skeleton" style="height:18px;width:60px"></div>
+      </div>`).join('');
+    pagination.innerHTML = '';
+
+    try {
+      const data = await api.get(`/api/points/transactions?page=${page}&size=${PAGE_SIZE}&sort=createdAt,DESC`);
+      renderTransactions(data, page);
+    } catch (e) {
+      area.innerHTML = `<div class="empty"><span class="empty-icon">⚠️</span><div class="empty-title">불러오기 실패</div><div class="empty-desc">${esc(e.message)}</div></div>`;
+    }
+  }
+
+  /* ── 거래 내역 렌더링 ── */
+  function renderTransactions(data, page) {
+    const area = document.getElementById('txArea');
+    const paginationArea = document.getElementById('paginationArea');
+    const items = data.content ?? data;
+
+    if (!items || items.length === 0) {
+      area.innerHTML = `
+        <div class="empty">
+          <span class="empty-icon">🪙</span>
+          <div class="empty-title">포인트 내역이 없습니다</div>
+          <div class="empty-desc">상품을 구매하면 포인트가 적립됩니다.</div>
+        </div>`;
+      return;
+    }
+
+    const rows = items.map(tx => {
+      const meta = TYPE_META[tx.type] || { icon: '•', iconCls: '', amtCls: '' };
+      const paymentInfo = tx.paymentId
+        ? `<div class="tx-payment-id">결제 #${tx.paymentId}</div>`
+        : '';
+      return `
+        <div class="tx-item">
+          <div class="tx-icon ${meta.iconCls}">${meta.icon}</div>
+          <div class="tx-info">
+            <div class="tx-type">${esc(tx.typeLabel)}</div>
+            <div class="tx-date">${fmtDate(tx.createdAt)}</div>
+            ${paymentInfo}
+          </div>
+          <div class="tx-amount ${meta.amtCls}">${tx.amount.toLocaleString()}P</div>
+        </div>`;
+    }).join('');
+
+    area.innerHTML = `<div class="tx-list">${rows}</div>`;
+
+    // 페이지네이션
+    const totalPages = data.totalPages ?? 1;
+    if (totalPages <= 1) { paginationArea.innerHTML = ''; return; }
+
+    const prevDisabled = page === 0 ? 'disabled' : '';
+    const nextDisabled = page >= totalPages - 1 ? 'disabled' : '';
+    const pageNums = buildPageNums(page, totalPages);
+
+    paginationArea.innerHTML = `
+      <div class="pagination">
+        <button class="page-btn" ${prevDisabled} onclick="goPage(${page - 1})">‹</button>
+        ${pageNums.map(p =>
+          p === '...'
+            ? `<span class="page-info">…</span>`
+            : `<button class="page-btn ${p === page ? 'active' : ''}" onclick="goPage(${p})">${p + 1}</button>`
+        ).join('')}
+        <button class="page-btn" ${nextDisabled} onclick="goPage(${page + 1})">›</button>
+      </div>`;
+  }
+
+  function buildPageNums(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i);
+    const nums = new Set([0, total - 1, current, current - 1, current + 1].filter(n => n >= 0 && n < total));
+    const sorted = [...nums].sort((a, b) => a - b);
+    const result = [];
+    for (let i = 0; i < sorted.length; i++) {
+      if (i > 0 && sorted[i] - sorted[i - 1] > 1) result.push('...');
+      result.push(sorted[i]);
+    }
+    return result;
+  }
+
+  function goPage(page) {
+    currentPage = page;
+    loadTransactions(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  let _t;
+  function showToast(msg, type = '') {
+    const el = document.getElementById('toast');
+    el.textContent = msg; el.className = `show ${type}`;
+    clearTimeout(_t); _t = setTimeout(() => el.className = '', 2600);
+  }
+
+  loadBalance();
+  loadTransactions(0);
+</script>
+</body>
+</html>

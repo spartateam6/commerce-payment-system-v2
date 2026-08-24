@@ -577,8 +577,11 @@
 
         <!-- 이미지 컬럼 -->
         <div class="img-col">
-          <div class="product-img-main ${soldOut ? 'sold-out-img' : ''}">
-            <div class="img-placeholder">
+          <div class="product-img-main ${soldOut ? 'sold-out-img' : ''}" style="position:relative">
+            <img src="/demo/images/product/${p.id}.png" alt="${esc(p.name)}"
+                 style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:inherit"
+                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
+            <div class="img-placeholder" style="display:none">
               <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                 <circle cx="8.5" cy="8.5" r="1.5"/>

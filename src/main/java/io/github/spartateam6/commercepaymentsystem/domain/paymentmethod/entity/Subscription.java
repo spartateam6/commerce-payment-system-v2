@@ -1,12 +1,15 @@
 package io.github.spartateam6.commercepaymentsystem.domain.paymentmethod.entity;
 
 import io.github.spartateam6.commercepaymentsystem.domain.member.entity.Member;
+import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
 import io.github.spartateam6.commercepaymentsystem.global.entity.AuditingEntity;
+import io.github.spartateam6.commercepaymentsystem.global.exception.BusinessException;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.coyote.BadRequestException;
 
 import java.time.LocalDate;
 
@@ -29,6 +32,9 @@ public class Subscription extends AuditingEntity {
     private PaymentMethod paymentMethod;
 
     @Column(name = "plan_name", nullable = false)
+    private String planName;
+
+    @Column(name = "amount", nullable = false)
     private Integer amount;
 
     @Enumerated(EnumType.STRING)
@@ -42,4 +48,30 @@ public class Subscription extends AuditingEntity {
     private LocalDate cancelledAt;
 
     @Builder
+    public Subscription(Member member, PaymentMethod paymentMethod, String planName, Integer amount, LocalDate nextBillingDate, LocalDate cancelledAt) {
+        this.member = member;
+        this.paymentMethod = paymentMethod;
+        this.planName = planName;
+        this.amount = amount;
+        this.status = SubscriptionSatatus.ACTIVE;
+        this.nextBillingDate = nextBillingDate;
+    }
+
+    public void advanceNextBillingDate(LocalDate newDate) {
+        this.nextBillingDate = newDate;
+    }
+
+    public void changeStatus(SubscriptionSatatus newStatus) {
+        if(!this.status.canTransitTo(newStatus)) {
+            throw new BusinessException(ErrorCode.INVALID_SUBSCRIPTION_STATUS);
+        }
+        this.status = newStatus;
+        if (newStatus == SubscriptionSatatus.CANCELLED) {
+            this.cancelledAt = LocalDate.now();
+        }
+    }
+
+    public boolean isOwnedBy(Long memberId) {
+        return this.member.getId().equals(memberId);
+    }
 }

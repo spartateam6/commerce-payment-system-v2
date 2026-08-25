@@ -265,7 +265,7 @@
 <body>
 
 <header>
-  <a class="logo" href="/demo/products.html"><span>S</span>PARTA SHOP</a>
+  <a class="logo" href="/products"><span>S</span>PARTA SHOP</a>
 </header>
 
 <main>
@@ -352,7 +352,7 @@
 <script src="/demo/js/auth.js"></script>
 <script>
   if (Auth.isLoggedIn()) {
-    const redirect = new URLSearchParams(location.search).get('redirect') || '/demo/products.html';
+    const redirect = new URLSearchParams(location.search).get('redirect') || '/products';
     location.href = redirect;
   }
 
@@ -397,7 +397,7 @@
     try {
       const data = await api.post('/api/auth/login', { email, password });
       Auth.setToken(data.accessToken);
-      location.href = new URLSearchParams(location.search).get('redirect') || '/demo/products.html';
+      location.href = new URLSearchParams(location.search).get('redirect') || '/products';
     } catch (e) {
       setAlert('loginAlert', e.message || '이메일 또는 비밀번호를 확인해주세요.', 'error');
     } finally {

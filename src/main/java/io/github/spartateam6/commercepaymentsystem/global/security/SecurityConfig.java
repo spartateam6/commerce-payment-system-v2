@@ -34,7 +34,17 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/",
-                                "/index.html",
+                                "/login",
+                                "/products",
+                                "/product-detail",
+                                "/cart",
+                                "/orders",
+                                "/order-confirm",
+                                "/points",
+                                "/my-page",
+                                "/pay",
+                                "/subscription",
+
                                 // Portone 결제
                                 "/demo/**",
 
@@ -47,9 +57,9 @@ public class SecurityConfig {
 
                                 "/api/products/**",
                                 "/api/auth/**"
-                        )
-                        .permitAll()
-                        .anyRequest().authenticated()
+                        ).permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex ->
                         ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))

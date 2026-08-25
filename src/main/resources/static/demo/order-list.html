@@ -125,14 +125,14 @@
 <body>
 
 <header>
-  <a class="logo" href="/demo/products.html"><span>S</span>PARTA SHOP</a>
+  <a class="logo" href="/products"><span>S</span>PARTA SHOP</a>
   <div class="header-nav">
-    <a href="/demo/products.html" class="nav-link">상품 목록</a>
+    <a href="/products" class="nav-link">상품 목록</a>
     <span class="nav-sep">|</span>
-    <a href="/demo/cart.html" class="nav-link">장바구니</a>
-    <a href="/demo/order-list.html" class="nav-link">주문 내역</a>
-    <a href="/demo/my-page.html" class="nav-link">내 정보</a>
-    <a href="/demo/login.html" id="loginLink" class="nav-btn nav-btn-primary" style="display:none">로그인</a>
+    <a href="/cart" class="nav-link">장바구니</a>
+    <a href="/orders" class="nav-link">주문 내역</a>
+    <a href="/my-page" class="nav-link">내 정보</a>
+    <a href="/login" id="loginLink" class="nav-btn nav-btn-primary" style="display:none">로그인</a>
     <button id="logoutBtn" class="nav-btn nav-btn-ghost" style="display:none" onclick="Auth.logout()">로그아웃</button>
   </div>
 </header>
@@ -203,7 +203,7 @@
           <span class="empty-icon">📦</span>
           <div class="empty-title">주문 내역이 없습니다</div>
           <div class="empty-desc">첫 번째 주문을 해보세요!</div>
-          <a class="btn-shop" href="/demo/products.html">쇼핑하러 가기</a>
+          <a class="btn-shop" href="/products">쇼핑하러 가기</a>
         </div>`;
       return;
     }
@@ -232,13 +232,13 @@
       `).join('');
 
       const actionBtns = isPending(order) ? `
-        <a href="/demo/order-confirm.html?orderId=${order.orderId}" class="btn-detail btn-detail-primary">결제하기</a>
+        <a href="/order-confirm?orderId=${order.orderId}" class="btn-detail btn-detail-primary">결제하기</a>
         <button class="btn-detail btn-detail-danger" onclick="cancelOrder(${order.orderId})">주문 취소</button>
       ` : isConfirmed(order) ? `
-        <a href="/demo/order-confirm.html?orderId=${order.orderId}" class="btn-detail btn-detail-ghost">상세 보기</a>
-        <a href="/demo/order-confirm.html?orderId=${order.orderId}&refund=true" class="btn-detail btn-detail-danger">환불 요청</a>
+        <a href="/order-confirm?orderId=${order.orderId}" class="btn-detail btn-detail-ghost">상세 보기</a>
+        <a href="/order-confirm?orderId=${order.orderId}&refund=true" class="btn-detail btn-detail-danger">환불 요청</a>
       ` : `
-        <a href="/demo/order-confirm.html?orderId=${order.orderId}" class="btn-detail btn-detail-ghost">상세 보기</a>
+        <a href="/order-confirm?orderId=${order.orderId}" class="btn-detail btn-detail-ghost">상세 보기</a>
       `;
 
       return `

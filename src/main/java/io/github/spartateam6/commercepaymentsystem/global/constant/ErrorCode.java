@@ -60,6 +60,15 @@ public enum ErrorCode {
     // Refund
     REFUND_NOT_FOUND(HttpStatus.NOT_FOUND, "REFUND_001", "환불 정보를 찾을 수 없습니다."),
 
+    // PaymentMethod
+    PAYMENT_METHOD_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_METHOD_001", "결제수단을 찾을 수 없습니다."),
+
+    // Subscription
+    SUBSCRIPTION_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBSCRIPTION_001", "구독 정보를 찾을 수 없습니다."),
+    INVALID_SUBSCRIPTION_STATUS(HttpStatus.BAD_REQUEST, "SUBSCRIPTION_002", "유효하지 않은 구독 상태 변경입니다."),
+    SUBSCRIPTION_INVOICE_NOT_FOUND(HttpStatus.NOT_FOUND, "SUBSCRIPTION_003", "구독 청구서를 찾을 수 없습니다."),
+    SUBSCRIPTION_START_PAYMENT_FAILED(HttpStatus.BAD_REQUEST, "SUBSCRIPTION_004", "첫 결제에 실패하여 구독이 생성되지 않았습니다."),
+
     // Auth
     UNAUTHORIZED(HttpStatus.UNAUTHORIZED, "AUTH_001", "인증이 필요합니다.");
 

@@ -28,6 +28,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-restclient'
     implementation 'org.springframework.boot:spring-boot-starter-aspectj'
+
+    // AWS
+    implementation platform('io.awspring.cloud:spring-cloud-aws-dependencies:4.1.0')
+    implementation 'io.awspring.cloud:spring-cloud-aws-starter-parameter-store'
+
     // JWT
     implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'

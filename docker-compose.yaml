@@ -1,16 +1,22 @@
+name: commerce-payment-system-v2
+
 services:
   mysql:
-    image: mysql:latest
-    container_name: shop-mysql
+    image: mysql:8.4
     environment:
       MYSQL_DATABASE: commerce
       MYSQL_USER: commerce
       MYSQL_PASSWORD: commerce
       MYSQL_ROOT_PASSWORD: root1234
     ports:
-      - "3306:3306"
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot1234"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+volumes:
+  mysql-data:

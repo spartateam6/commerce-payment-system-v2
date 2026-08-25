@@ -12,9 +12,8 @@ FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 RUN useradd --create-home --shell /bin/bash app
+COPY --from=builder --chown=app:app /workspace/build/libs/app.jar app.jar
+
 USER app
-
-COPY --from=builder /workspace/build/libs/*.jar app.jar
-
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

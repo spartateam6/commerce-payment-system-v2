@@ -475,14 +475,14 @@
 
 <!-- 헤더 -->
 <header>
-  <a class="logo" href="/demo/products.html"><span>S</span>PARTA SHOP</a>
+  <a class="logo" href="/products"><span>S</span>PARTA SHOP</a>
   <div class="header-nav">
-    <a href="/demo/products.html" class="nav-link">상품 목록</a>
+    <a href="/products" class="nav-link">상품 목록</a>
     <span class="nav-sep">|</span>
-    <a href="/demo/cart.html" class="nav-link">장바구니</a>
-    <a href="/demo/order-list.html" class="nav-link">주문 내역</a>
-    <a href="/demo/my-page.html" class="nav-link">내 정보</a>
-    <a href="/demo/login.html" id="loginLink" class="nav-btn nav-btn-primary" style="display:none">로그인</a>
+    <a href="/cart" class="nav-link">장바구니</a>
+    <a href="/orders" class="nav-link">주문 내역</a>
+    <a href="/my-page" class="nav-link">내 정보</a>
+    <a href="/login" id="loginLink" class="nav-btn nav-btn-primary" style="display:none">로그인</a>
     <button id="logoutBtn" class="nav-btn nav-btn-ghost" style="display:none" onclick="Auth.logout()">로그아웃</button>
   </div>
 </header>
@@ -648,7 +648,7 @@
 
       const card = document.createElement('div');
       card.className = 'product-card' + (soldOut ? ' sold-out' : '');
-      card.addEventListener('click', () => location.href = `/demo/product-detail.html?id=${p.id}`);
+      card.addEventListener('click', () => location.href = `/product-detail?id=${p.id}`);
       card.innerHTML = `
         <div class="product-img">
           <div class="soldout-overlay">
@@ -715,7 +715,7 @@
   /* ── 장바구니 담기 ── */
   async function addToCart(productId, name) {
     if (!Auth.isLoggedIn()) {
-      location.href = '/demo/login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+      location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
       return;
     }
     const btn = document.getElementById(`cart-${productId}`);

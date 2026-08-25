@@ -3,11 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <title>Commerce Payment System</title>
-    <script>
-        window.location.replace("/demo/products.html");
-    </script>
 </head>
 <body>
-<a href="/demo/products.html">상품 목록으로 이동</a>
+<script>
+    const token = localStorage.getItem("accessToken");
+
+    if (!token) {
+        window.location.replace("/login");
+    } else {
+        fetch("/api/members/me", {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        })
+            .then(response => {
+                if (response.ok) {
+                    window.location.replace("/products");
+                } else {
+                    localStorage.removeItem("accessToken");
+                    window.location.replace("/login");
+                }
+            })
+            .catch(() => {
+                window.location.replace("/login");
+            });
+    }
+</script>
 </body>
 </html>

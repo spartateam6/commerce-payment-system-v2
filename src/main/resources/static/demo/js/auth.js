@@ -6,7 +6,7 @@ const Auth = {
 
   requireAuth() {
     if (!this.isLoggedIn()) {
-      location.href = '/demo/login.html?redirect=' + encodeURIComponent(location.pathname + location.search);
+      location.href = '/login?redirect=' + encodeURIComponent(location.pathname + location.search);
       return false;
     }
     return true;
@@ -14,6 +14,6 @@ const Auth = {
 
   logout() {
     this.clear();
-    location.href = '/demo/login.html';
+    location.href = '/login';
   },
 };

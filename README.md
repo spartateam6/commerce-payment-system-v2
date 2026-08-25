@@ -73,7 +73,7 @@ docker compose up -d
 `src/main/resources/static/demo/` 하위에 로그인/상품/장바구니/주문/결제 등을 테스트해볼 수 있는 정적 HTML 데모 페이지가 포함되어 있습니다. 서버 기동 후 아래 경로로 접근할 수 있습니다.
 
 ```
-http://localhost:8080/demo/login.html
+http://localhost:8080/login
 ```
 
 ### 4. 테스트 & 커버리지

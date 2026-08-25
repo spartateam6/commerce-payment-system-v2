@@ -1,6 +1,7 @@
 package io.github.spartateam6.commercepaymentsystem.domain.paymentmethod.controller;
 
 import io.github.spartateam6.commercepaymentsystem.domain.paymentmethod.dto.PaymentMethodRegisterRequest;
+import io.github.spartateam6.commercepaymentsystem.domain.paymentmethod.dto.PaymentMethodResponse;
 import io.github.spartateam6.commercepaymentsystem.domain.paymentmethod.service.PaymentMethodService;
 import io.github.spartateam6.commercepaymentsystem.global.annotation.MemberId;
 import io.github.spartateam6.commercepaymentsystem.global.response.ApiResponse;
@@ -26,6 +27,6 @@ public class PaymentMethodController {
             @Valid @RequestBody PaymentMethodRegisterRequest request
     ){
         PaymentMethodResponse response = paymentMethodService.register(memberId, request);
-        return ResponseEntity.ststus(HttpStatus.CREATED).body(ApiResponse.ok(response));
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
     }
 }

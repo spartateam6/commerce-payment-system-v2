@@ -173,7 +173,7 @@ jobs:
           PY
 
   ghcr:
-    name: GHCR ARM64 Mirror
+    name: GHCR ARM64 Build
     needs: build
     if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest

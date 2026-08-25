@@ -1,21 +1,22 @@
 spring:
-#  aws parameter 적용 이전
-#  config:
-#    import:
-#      - aws-parameterstore:/sparta-deploy-demo/prod/
-
+  config:
+    import: aws-parameterstore:/commerce-payment-system-v2/prod/
+  cloud:
+    aws:
+      region:
+        static: ap-northeast-2
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:validate}
+  sql:
+    init:
+      mode: ${SPRING_SQL_INIT_MODE:never}
+
+server:
+  forward-headers-strategy: framework
 
 logging:
   level:
+    org.hibernate.SQL: WARN
     io.github.spartateam6.commercepaymentsystem.global.logging.ControllerLoggingAspect: WARN
-
-# aws parameter store 적용 후에 수정
-#jwt:
-#  secret:
-#  expiration: 3600000

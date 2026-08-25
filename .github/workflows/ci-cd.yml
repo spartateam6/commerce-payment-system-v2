@@ -1,32 +1,24 @@
-name: CI
+name: CI/CD
 
 on:
   pull_request:
     branches: [ dev,main ]
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.png'
-      - '**/*.jpg'
+
   push:
     branches: [ dev,main ]
-    paths-ignore:
-      - '**/*.md'
-      - '**/*.png'
-      - '**/*.jpg'
+
 
 permissions:
   contents: read
-  packages: write
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 jobs:
   build:
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    concurrency:
+      group: ci-${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       # 1.저장소 코드를 가상머신으로 받는 단계
@@ -54,12 +46,8 @@ jobs:
       - name: gradlew 실행 권한 부여
         run: chmod +x gradlew
 
-      # 1단계: 컴파일 확인===
-      - name: 컴파일 확인
-        run: ./gradlew clean compileJava compileTestJava --console=plain
-
-      - name: Build & Test
-        run: ./gradlew test jacocoTestReport --console=plain
+      - name: Test & Jacoco 리포트 생성
+        run: ./gradlew clean test --console=plain
 
       - name: JaCoCo Coverage Summary
         if: always()
@@ -184,18 +172,24 @@ jobs:
                       )
           PY
 
-  docker:
-    name: Docker Build & Push
+  ghcr:
+    name: GHCR ARM64 Build
     needs: build
-    # pr 머지 되었을 때만 실행
-    if: github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'dev')
+    if: github.event_name == 'push' && github.ref_name == 'main'
     runs-on: ubuntu-latest
-
-    env:
-      DOCKER_IMAGE: ghcr.io/${{ github.repository }}:${{ github.ref_name }}-${{ github.sha }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v7
+
+      - name: QEMU 설정
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
 
       - name: GHCR 로그인
         uses: docker/login-action@v4
@@ -204,8 +198,87 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker 이미지 빌드
-        run: docker build -t "${DOCKER_IMAGE}" .
+      - name: ARM64 이미지 build 및 GHCR push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Docker 이미지 업로드
-        run: docker push "${DOCKER_IMAGE}"
+  deploy:
+    name: ECR Build & EC2 Deploy
+    needs: build
+    if: github.event_name == 'push' && github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    concurrency:
+      group: commerce-v2-production-deploy
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: AWS OIDC Role 인증
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          allowed-account-ids: ${{ vars.AWS_ACCOUNT_ID }}
+          role-session-name: commerce-v2-deploy-${{ github.run_id }}
+
+      - name: QEMU 설정
+        uses: docker/setup-qemu-action@v3
+
+      - name: Docker Buildx 설정
+        uses: docker/setup-buildx-action@v3
+
+      - name: ECR 로그인
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: ARM64 이미지 build 및 ECR push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/arm64
+          tags: ${{ steps.ecr-login.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: SSM으로 EC2 배포
+        if: vars.DEPLOY_TO_EC2 == 'true'
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --document-name AWS-RunShellScript \
+            --instance-ids "${{ vars.EC2_INSTANCE_ID }}" \
+            --parameters "commands=sudo /opt/commerce-v2/deploy.sh ${{ github.sha }} normal" \
+            --comment "Deploy ${{ github.sha }}" \
+            --query 'Command.CommandId' \
+            --output text)
+          aws ssm wait command-executed \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ vars.EC2_INSTANCE_ID }}"
+          aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "${{ vars.EC2_INSTANCE_ID }}" \
+            --plugin-name aws:runShellScript \
+            --output json
+
+      - name: HTTPS health check
+        if: vars.DEPLOY_TO_EC2 == 'true'
+        run: |
+          curl \
+            --fail \
+            --retry 12 \
+            --retry-delay 5 \
+            --retry-connrefused \
+            --connect-timeout 5 \
+            --max-time 10 \
+            "https://${{ vars.APP_DOMAIN }}/actuator/health"

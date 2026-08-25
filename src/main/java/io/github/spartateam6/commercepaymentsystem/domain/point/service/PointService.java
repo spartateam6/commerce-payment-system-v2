@@ -8,6 +8,7 @@ import io.github.spartateam6.commercepaymentsystem.domain.point.dto.PointTransac
 import io.github.spartateam6.commercepaymentsystem.domain.point.entity.PointTransaction;
 import io.github.spartateam6.commercepaymentsystem.domain.point.entity.PointTransactionType;
 import io.github.spartateam6.commercepaymentsystem.domain.point.repository.PointTransactionRepository;
+import io.github.spartateam6.commercepaymentsystem.domain.refund.entity.Refund;
 import io.github.spartateam6.commercepaymentsystem.global.response.PageResponse;
 import io.github.spartateam6.commercepaymentsystem.global.constant.ErrorCode;
 import io.github.spartateam6.commercepaymentsystem.global.exception.BusinessException;
@@ -77,19 +78,15 @@ public class PointService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void applyRefundPoint(Long memberId, Payment payment) {
+    public void applyRefundPoint(Long memberId, Payment payment, Refund refund,
+                                 int restoreAmount, int revokeAmount) {
         Member member = getMemberForUpdate(memberId);
-        if (hasRefundTransactions(memberId, payment.getId())) {
+        if (refund.getId() != null && hasRefundTransactions(refund.getId())) {
             return;
         }
 
-        int restoreAmount =
-                getTransactionAmount(memberId, payment.getId(), PointTransactionType.USE);
-        int revokeAmount =
-                getTransactionAmount(memberId, payment.getId(), PointTransactionType.EARN);
-
-        saveTransaction(member, payment, PointTransactionType.USE_RESTORE, restoreAmount);
-        saveTransaction(member, payment, PointTransactionType.EARN_REVOKE, revokeAmount);
+        saveRefundTransaction(member, payment, refund, PointTransactionType.USE_RESTORE, restoreAmount);
+        saveRefundTransaction(member, payment, refund, PointTransactionType.EARN_REVOKE, revokeAmount);
 
         member.changePoint(restoreAmount - revokeAmount);
         log.info("환불 포인트 정산 반영 paymentId={} memberId={} restored={} revoked={} balanceAfter={}",
@@ -117,13 +114,20 @@ public class PointService {
                 );
     }
 
-    private boolean hasRefundTransactions(Long memberId, Long paymentId) {
+    private boolean hasRefundTransactions(Long refundId) {
         return pointTransactionRepository
-                .existsByMember_IdAndPayment_IdAndTransactionTypeIn(
-                        memberId,
-                        paymentId,
+                .existsByRefund_IdAndTransactionTypeIn(
+                        refundId,
                         REFUND_TYPES
                 );
+    }
+
+    private void saveRefundTransaction(Member member, Payment payment, Refund refund,
+                                       PointTransactionType type, int amount) {
+        if (amount == 0) {
+            return;
+        }
+        pointTransactionRepository.save(new PointTransaction(member, payment, refund, type, amount));
     }
 
     private int getTransactionAmount(

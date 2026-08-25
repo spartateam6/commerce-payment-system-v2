@@ -2,12 +2,18 @@ package io.github.spartateam6.commercepaymentsystem.domain.refund.repository;
 
 import io.github.spartateam6.commercepaymentsystem.domain.refund.entity.Refund;
 import org.springframework.data.jpa.repository.JpaRepository;
-
-import java.util.Optional;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface RefundRepository extends JpaRepository<Refund, Long> {
+    boolean existsByRequestKey(String requestKey);
 
-    Optional<Refund> findByPayment_Id(Long paymentId);
+    @Query("SELECT COALESCE(SUM(r.pointRefundAmount), 0) FROM Refund r WHERE r.payment.id = :paymentId")
+    Integer sumPointRefundAmount(@Param("paymentId") Long paymentId);
 
-    boolean existsByPayment_Id(Long paymentId);
+    @Query("SELECT COALESCE(SUM(r.pgRefundAmount), 0) FROM Refund r WHERE r.payment.id = :paymentId")
+    Integer sumPgRefundAmount(@Param("paymentId") Long paymentId);
+
+    @Query("SELECT COALESCE(SUM(r.earnedPointRevokeAmount), 0) FROM Refund r WHERE r.payment.id = :paymentId")
+    Integer sumEarnedPointRevokeAmount(@Param("paymentId") Long paymentId);
 }

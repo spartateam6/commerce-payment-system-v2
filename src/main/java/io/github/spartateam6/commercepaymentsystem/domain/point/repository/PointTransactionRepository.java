@@ -24,4 +24,9 @@ public interface PointTransactionRepository extends JpaRepository<PointTransacti
             Long paymentId,
             Collection<PointTransactionType> transactionTypes
     );
+
+    boolean existsByRefund_IdAndTransactionTypeIn(
+            Long refundId,
+            Collection<PointTransactionType> transactionTypes
+    );
 }

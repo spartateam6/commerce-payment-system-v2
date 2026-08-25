@@ -1,17 +1,23 @@
 package io.github.spartateam6.commercepaymentsystem.domain.refund.dto;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
-public record RefundRequest(
-        @NotNull(message = "결제 ID는 필수입니다.")
-        @Positive(message = "결제 ID는 양수여야 합니다.")
-        Long paymentId,
+import java.util.List;
 
-        @NotBlank(message = "취소 사유는 필수입니다.")
-        @Size(max = 500, message = "취소 사유는 500자 이하여야 합니다.")
-        String cancelReason
+public record RefundRequest(
+        @NotNull @Positive Long paymentId,
+        @NotBlank @Size(max = 100) String requestKey,
+        @NotBlank @Size(max = 500) String cancelReason,
+        @NotEmpty List<@Valid RefundItemRequest> items
 ) {
+    public record RefundItemRequest(
+            @NotNull @Positive Long orderItemId,
+            @NotNull @Positive Integer quantity
+    ) {
+    }
 }

@@ -17,6 +17,7 @@ public class RefundFacade {
     private final PaymentGateway paymentGateway;
 
     public RefundResponse refund(Long memberId, RefundRequest request) {
+        refundService.validate(memberId, request);
         RefundService.RefundResult result = refundService.process(memberId, request);
 
         if (result.pgRefundAmount() == 0) {
@@ -27,6 +28,7 @@ public class RefundFacade {
         }
 
         try {
+            refundService.markGatewayRequested(result.response().refundId());
             paymentGateway.cancelPayment(
                     result.portonePaymentId(),
                     result.cancelReason(),
@@ -44,6 +46,7 @@ public class RefundFacade {
             throw exception;
         }
 
-        return result.response();
+        return refundService.markGatewaySucceeded(
+                result.response().refundId());
     }
 }

@@ -10,7 +10,13 @@ public enum PaymentStatus {
     PAID {
         @Override
         public boolean canTransitTo(PaymentStatus status) {
-            return status == REFUND;
+            return status == PARTIAL_REFUND || status == REFUND;
+        }
+    },
+    PARTIAL_REFUND {
+        @Override
+        public boolean canTransitTo(PaymentStatus status) {
+            return status == PARTIAL_REFUND || status == REFUND;
         }
     },
     FAILED {

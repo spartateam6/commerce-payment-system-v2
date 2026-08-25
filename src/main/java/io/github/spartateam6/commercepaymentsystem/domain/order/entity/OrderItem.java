@@ -69,6 +69,9 @@ public class OrderItem extends AuditingEntity {
     @Column(name = "quantity", nullable = false)
     private Integer quantity;
 
+    @Column(name = "refunded_quantity", nullable = false)
+    private Integer refundedQuantity;
+
     static OrderItem create(
             Order order,
             Long cartItemId,
@@ -103,10 +106,22 @@ public class OrderItem extends AuditingEntity {
         orderItem.productNameSnapshot = productName;
         orderItem.unitPriceSnapshot = unitPrice;
         orderItem.quantity = quantity;
+        orderItem.refundedQuantity = 0;
         return orderItem;
     }
 
     public Integer calculateLineAmount() {
         return unitPriceSnapshot * quantity;
+    }
+
+    public int getRefundableQuantity() {
+        return quantity - (refundedQuantity == null ? 0 : refundedQuantity);
+    }
+
+    public void refundQuantity(int refundQuantity) {
+        if (refundQuantity <= 0 || refundQuantity > getRefundableQuantity()) {
+            throw new IllegalArgumentException("환불 수량이 잔여 환불 가능 수량을 초과합니다.");
+        }
+        refundedQuantity = (refundedQuantity == null ? 0 : refundedQuantity) + refundQuantity;
     }
 }

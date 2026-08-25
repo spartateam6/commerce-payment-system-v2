@@ -221,6 +221,8 @@
   let memberInfo = null;
   let currentPgAmount = 0;
   let refundPaymentId = null;
+  let refundRequestKey = null;
+  let currentRefundItems = [];
 
   /* ── 주문 상세 로드 ── */
   async function loadOrder() {
@@ -259,6 +261,9 @@
     const isRefunded  = order.payment?.status === 'REFUND';
     const pointUsed   = Number(order.pointUsedAmount || 0);
     currentPgAmount   = queryPgAmount ?? Math.max(order.totalAmount - pointUsed, 0);
+    currentRefundItems = order.orderItems
+      .filter(item => item.refundableQuantity > 0)
+      .map(item => ({ orderItemId: item.orderItemId, quantity: item.refundableQuantity }));
 
     const itemsHtml = order.orderItems.map(it => `
       <div class="order-item">
@@ -411,6 +416,7 @@
       return;
     }
     refundPaymentId = paymentId;
+    refundRequestKey = crypto.randomUUID();
     document.getElementById('refundReason').value = '';
     document.getElementById('reasonCount').textContent = '0';
     document.getElementById('refundModal').classList.add('open');
@@ -421,6 +427,7 @@
     if (document.getElementById('refundBtn').disabled) return;
     document.getElementById('refundModal').classList.remove('open');
     refundPaymentId = null;
+    refundRequestKey = null;
   }
 
   async function submitRefund() {
@@ -437,10 +444,13 @@
     try {
       const result = await api.post('/api/refunds', {
         paymentId: refundPaymentId,
+        requestKey: refundRequestKey,
         cancelReason: reason,
+        items: currentRefundItems,
       });
       document.getElementById('refundModal').classList.remove('open');
       refundPaymentId = null;
+      refundRequestKey = null;
       showToast(`환불이 완료되었습니다. PG ${result.pgRefundAmount.toLocaleString()}원 · 포인트 ${result.pointRefundAmount.toLocaleString()}P`, 'success');
       await loadOrder();
     } catch (e) {

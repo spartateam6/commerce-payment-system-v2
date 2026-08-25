@@ -773,26 +773,32 @@ Authorization: Bearer {accessToken}
 | 필드 | 타입 | 필수 | 제약 |
 |---|---|---|---|
 | `paymentId` | Long | O | 양수 |
+| `requestKey` | String | O | 요청별 고유 키, 최대 100자 |
 | `cancelReason` | String | O | 공백 불가, 최대 500자 |
+| `items` | Array | O | 1개 이상 |
+| `items[].orderItemId` | Long | O | 양수 |
+| `items[].quantity` | Integer | O | 잔여 환불 가능 수량 이하 |
 
 ```json
 {
   "paymentId": 300,
-  "cancelReason": "단순 변심"
+  "requestKey": "550e8400-e29b-41d4-a716-446655440000",
+  "cancelReason": "단순 변심",
+  "items": [{"orderItemId": 10, "quantity": 1}]
 }
 ```
 
-**동작 개요**: 결제 완료(`Payment = PAID`, `Order = CONFIRMED`)된 주문만 환불할 수 있습니다. 환불 확정과 함께 사용 포인트를 복구하고, PG 결제 금액(`pgAmount`)이 있으면 PortOne 결제를 취소한 뒤 재고를 전체 복구합니다. PG 취소가 실패하면 환불은 `FAILED`로 기록되고 예외가 발생합니다.
+**동작 개요**: 결제 완료 또는 부분 환불 상태의 주문을 주문상품·수량 단위로 환불합니다. 가격 스냅샷으로 총액을 계산하고 결제 당시 포인트/PG 비율로 분리한 뒤 포인트·재고·상태를 DB에 반영하고, 트랜잭션 밖에서 PortOne을 취소합니다.
 
 ```text
-Payment  PAID -> REFUND
-Order    CONFIRMED -> CANCELLED
-재고      전체 복구
-포인트    사용분 복구
+Payment  PAID -> PARTIAL_REFUND -> REFUND
+Order    부분 환불은 CONFIRMED, 전액 환불은 CANCELLED
+재고      환불 수량만 복구
+포인트    사용분 비례 복구 + 적립분 비례 회수
 ```
 
-- 이미 환불된 결제(`Payment.status == REFUND`) 또는 환불 이력이 있는 결제는 `409 Conflict` (`PAYMENT_007`)로 거부됩니다.
-- 결제 완료 상태가 아닌 결제는 `400 Bad Request` (`PAYMENT_004`)로 거부됩니다.
+- 동일 `requestKey` 또는 잔여 수량을 초과한 요청은 `409 Conflict`로 거부됩니다.
+- `Payment = PAID/PARTIAL_REFUND`, `Order = CONFIRMED` 상태만 요청할 수 있습니다.
 
 **Response Body**
 
@@ -801,14 +807,19 @@ Order    CONFIRMED -> CANCELLED
   "code": "SUCCESS",
   "data": {
     "refundId": 50,
+    "refundType": "PARTIAL",
     "status": "COMPLETED",
+    "gatewayStatus": "SUCCEEDED",
+    "totalRefundAmount": 20000,
     "pgRefundAmount": 15000,
-    "pointRefundAmount": 5000
+    "pointRefundAmount": 5000,
+    "earnedPointRevokeAmount": 150,
+    "items": [{"orderItemId": 10, "quantity": 1, "totalRefundAmount": 20000, "pointRefundAmount": 5000, "pgRefundAmount": 15000}]
   }
 }
 ```
 
-> `status`는 `COMPLETED`(환불 완료) / `FAILED`(PG 취소 실패) 중 하나입니다.
+> `gatewayStatus`는 `NOT_REQUIRED`, `PENDING`, `SUCCEEDED`, `FAILED` 중 하나입니다.
 
 ---
 
@@ -890,5 +901,4 @@ Order    CONFIRMED -> CANCELLED
 | 코드 | HTTP Status | 메시지 |
 |---|---|---|
 | `REFUND_001` | 404 | 환불 정보를 찾을 수 없습니다. |
-
 

@@ -54,6 +54,12 @@ public class Payment extends AuditingEntity {
     @Column(name = "pg_amount", nullable = false)
     private Integer pgAmount;
 
+    @Column(name = "point_used_amount", nullable = false)
+    private Integer pointUsedAmount;
+
+    @Column(name = "earned_point_amount", nullable = false)
+    private Integer earnedPointAmount;
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
@@ -67,6 +73,8 @@ public class Payment extends AuditingEntity {
         this.order = order;
         this.orderAmount = orderAmount;
         this.pgAmount = pgAmount;
+        this.pointUsedAmount = order == null ? 0 : order.getPointUsedAmount();
+        this.earnedPointAmount = 0;
         this.status = status;
         this.portonePaymentId = generatePortonePaymentId();
         this.completedAt = null;
@@ -91,10 +99,15 @@ public class Payment extends AuditingEntity {
             }
 
             this.pgAmount = pgAmount;
+            this.earnedPointAmount = pgAmount / 100;
             this.completedAt = LocalDateTime.now();
         }
 
         this.status = newStatus;
+    }
+
+    public void applyRefund(boolean fullRefund) {
+        changeStatus(fullRefund ? PaymentStatus.REFUND : PaymentStatus.PARTIAL_REFUND);
     }
 
 }

@@ -165,14 +165,15 @@ io.github.spartateam6.commercepaymentsystem
 | `PENDING` | 결제 대기 |
 | `PAID` | 결제 완료 |
 | `FAILED` | 결제 실패 |
-| `REFUNDED` | 전액 환불 완료 |
+| `PARTIAL_REFUND` | 부분 환불 |
+| `REFUND` | 전액 환불 완료 |
 
 - Refund
 
 | Status | Description |
 |---|---|
-| `COMPLETED` | 전액 환불 완료 |
-| `FAILED` | 전액 환불 실패 |
+| `COMPLETED` | 환불 DB 반영 완료 |
+| `FAILED` | PG 취소 실패(재처리 대상) |
 
 - Point Transaction
 

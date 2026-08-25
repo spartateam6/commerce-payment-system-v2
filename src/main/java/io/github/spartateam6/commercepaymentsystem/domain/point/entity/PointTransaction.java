@@ -2,6 +2,7 @@ package io.github.spartateam6.commercepaymentsystem.domain.point.entity;
 
 import io.github.spartateam6.commercepaymentsystem.domain.member.entity.Member;
 import io.github.spartateam6.commercepaymentsystem.domain.payment.entity.Payment;
+import io.github.spartateam6.commercepaymentsystem.domain.refund.entity.Refund;
 import io.github.spartateam6.commercepaymentsystem.global.entity.AuditingEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -26,9 +27,8 @@ import lombok.NoArgsConstructor;
 @Table(
         name = "point_transactions",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_point_transactions_member_payment_type",
-                columnNames = {"member_id", "payment_id", "transaction_type"}
-        ),
+                name = "uk_point_transactions_refund_type",
+                columnNames = {"refund_id", "transaction_type"}),
         indexes = @Index(name = "idx_point_transactions_member_created", columnList = "member_id, created_at")
 )
 public class PointTransaction extends AuditingEntity {
@@ -46,6 +46,10 @@ public class PointTransaction extends AuditingEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "payment_id")
     private Payment payment;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "refund_id")
+    private Refund refund;
 
     @Column(name = "transaction_type", nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
@@ -74,5 +78,11 @@ public class PointTransaction extends AuditingEntity {
         this.payment = payment;
         this.transactionType = transactionType;
         this.amount = transactionType.signed(amount);
+    }
+
+    public PointTransaction(Member member, Payment payment, Refund refund,
+                            PointTransactionType transactionType, int amount) {
+        this(member, payment, transactionType, amount);
+        this.refund = refund;
     }
 }

@@ -10,6 +10,8 @@ public record OrderItemResponse(
         String productName,
         Integer unitPrice,
         Integer quantity,
+        Integer refundedQuantity,
+        Integer refundableQuantity,
         Integer lineAmount,
         LocalDateTime createdAt
 ) {
@@ -20,6 +22,8 @@ public record OrderItemResponse(
                 orderItem.getProductNameSnapshot(),
                 orderItem.getUnitPriceSnapshot(),
                 orderItem.getQuantity(),
+                orderItem.getRefundedQuantity(),
+                orderItem.getRefundableQuantity(),
                 orderItem.calculateLineAmount(),
                 orderItem.getCreatedAt()
         );
